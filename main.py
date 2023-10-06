@@ -16,7 +16,7 @@ def borrow_item():
 
     if student:
         item_initials = input("Enter 'B' for book or 'J' for journal if you want to borrow: ")
-        item_initials =item_initials.lower()
+        item_initials = item_initials.lower()
         
         if item_initials == 'b':
             item_type = 'book'
@@ -31,7 +31,7 @@ def borrow_item():
             # Perform a search query to find items of the specified type matching the search term
             items = session.query(Book if item_type == 'book' else Journal).filter(
                 Book.title.like(f"%{search_term}%") if item_type == 'book' else Journal.title.like(f"%{search_term}%")
-            ).all() #like() method is used to search partial text match ,it will match titles that contain the search_term anywhere in their title.
+            ).all()
 
             if not items:
                 print(f"\nNo {item_type}s found matching your search.")
@@ -39,30 +39,28 @@ def borrow_item():
             
             # Display the found items to the user.
             print(f"\n{item_type.capitalize()}s found: \n")
-            #enumerate is used to track the index of each item
-            for i, item in enumerate(items, start=1):#specify that index should start from 1
-                #displays author/editor depending on whether the item type is book/journal
+            for i, item in enumerate(items, start=1):
                 print(f"{i}. {item_type.capitalize()} Title: {item.title}, {'Author' if item_type == 'book' else 'Editor'}: {item.author if item_type == 'book' else item.editor}")
 
             selection = input(f"Enter the number of the {item_type} you want to borrow: ")
             try:
-                #convert the user's selection to an integer
                 selection = int(selection)
-                # Check if the user's selection is within the valid range (1 to the number of items).
                 if 1 <= selection <= len(items):
-                    #Get the selected item based on the user's selection.
                     selected_item = items[selection - 1]
-                    # Check if the selected item is available for borrowing (has at least one available copy).
                     if selected_item.available_copies > 0:
-                        # Reduce the available copies of the selected item by one, indicating it has been borrowed.
                         selected_item.available_copies -= 1
-                        # Calculate a random return date, which is the current date plus a random number of days between -9 and 9.
-                        return_date = datetime.now() + timedelta(days=random.randint(-4, 3))  # random return period
+                        
+                        # Calculate a fixed return date, which is the current date plus a fixed number of days (e.g., 7 days for a week-long borrowing period).
+                        fixed_return_period = 7  # Change this to the desired number of days
+                        return_date = datetime.now() + timedelta(days=fixed_return_period)
+                        
                         # Create a transaction record for the borrowed item.
                         transaction = BookTransaction(student_id=student.id, book_id=selected_item.id, return_date=return_date) if item_type == 'book' else JournalTransaction(student_id=student.id, journal_id=selected_item.id, return_date=return_date)
+                        
                         # Add the transaction to the session and commit it to the database.
                         session.add(transaction)
                         session.commit()
+                        
                         print(f"\n{student.name} of student ID {student.student_id} has successfully borrowed {item_type} of ID {selected_item.id} '{selected_item.title}' (Due Date: {return_date}).")
                     else:
                         print(f"Selected {item_type} is not available.")
@@ -74,6 +72,7 @@ def borrow_item():
             print("Invalid item type")
     else:
         print("Student not found.")
+
 
 def return_item():
     session = Session()
